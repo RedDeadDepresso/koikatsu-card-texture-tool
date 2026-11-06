@@ -4,11 +4,14 @@ using System.Text;
 
 namespace KoiCardTexTool
 {
-    /// <summary>Reference to a msgpack bin32 payload inside the card byte array.</summary>
+    /// <summary>Reference to a msgpack bin (bin8/16/32) payload inside the card byte array.</summary>
     public sealed class BinRef
     {
         public int Off;
         public int Len;
+        /// <summary>Size of the msgpack header just before <see cref="Off"/>: 2 (bin8), 3 (bin16) or 5 (bin32).
+        /// The game's serializer picks the shortest form, so a small payload does not have a 5-byte header.</summary>
+        public int HdrLen;
         public byte[] B;
         public byte[] Bytes()
         {
@@ -52,9 +55,9 @@ namespace KoiCardTexTool
                 case 0xc0: return null;
                 case 0xc2: return false;
                 case 0xc3: return true;
-                case 0xc4: return Bin(b, ref p, (int)U(b, ref p, 1));
-                case 0xc5: return Bin(b, ref p, (int)U(b, ref p, 2));
-                case 0xc6: return Bin(b, ref p, (int)U(b, ref p, 4));
+                case 0xc4: return Bin(b, ref p, (int)U(b, ref p, 1), 2);
+                case 0xc5: return Bin(b, ref p, (int)U(b, ref p, 2), 3);
+                case 0xc6: return Bin(b, ref p, (int)U(b, ref p, 4), 5);
                 case 0xca: { var v = BitConverter.ToSingle(b, p); p += 4; return (double)v; }
                 case 0xcb: { var v = BitConverter.ToDouble(b, p); p += 8; return v; }
                 case 0xcc: return (long)U(b, ref p, 1);
@@ -91,9 +94,9 @@ namespace KoiCardTexTool
             return s;
         }
 
-        static BinRef Bin(byte[] b, ref int p, int n)
+        static BinRef Bin(byte[] b, ref int p, int n, int hdrLen)
         {
-            var r = new BinRef { B = b, Off = p, Len = n };
+            var r = new BinRef { B = b, Off = p, Len = n, HdrLen = hdrLen };
             p += n;
             return r;
         }
