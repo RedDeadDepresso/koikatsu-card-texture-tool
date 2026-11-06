@@ -2312,6 +2312,7 @@ namespace KoiCardTexTool
             var bh = MP.Bin32Header(newBin.Length);            Buffer.BlockCopy(bh, 0, outBytes, w0, 5); w0 += 5;
             Buffer.BlockCopy(newBin, 0, outBytes, w0, newBin.Length); w0 += newBin.Length;
             Buffer.BlockCopy(b, bin.Off + bin.Len, outBytes, w0, b.Length - (bin.Off + bin.Len));
+            outBytes = CardHeader.AfterSplice(outBytes, oldHdrAt, outBytes.Length - b.Length);   // keep KKEx size / data length true
             File.WriteAllBytes(dst, outBytes);
             res.TPack += swPack.Elapsed.TotalMilliseconds;
 
