@@ -2303,15 +2303,8 @@ namespace KoiCardTexTool
 
             var swPack = Stopwatch.StartNew();
             byte[] newBin = inner.ToArray();
-            // the old header is 2/3/5 bytes (bin8/16/32), not always 5: backing up a fixed 5 bytes ate the end of the key before it
-            int oldHdrAt = bin.Off - bin.HdrLen;
-            var outBytes = new byte[oldHdrAt + 5 + newBin.Length + (b.Length - (bin.Off + bin.Len))];
-            int w0 = 0;
-            Buffer.BlockCopy(b, 0, outBytes, w0, end); w0 += end;                       // thumbnail PNG
-            Buffer.BlockCopy(b, end, outBytes, w0, oldHdrAt - end); w0 += oldHdrAt - end;
-            var bh = MP.Bin32Header(newBin.Length);            Buffer.BlockCopy(bh, 0, outBytes, w0, 5); w0 += 5;
-            Buffer.BlockCopy(newBin, 0, outBytes, w0, newBin.Length); w0 += newBin.Length;
-            Buffer.BlockCopy(b, bin.Off + bin.Len, outBytes, w0, b.Length - (bin.Off + bin.Len));
+            int oldHdrAt;
+            byte[] outBytes = MP.ReplaceBin(b, bin, newBin, out oldHdrAt);   // (the old header is 2/3/5 bytes, see BinRef.HdrLen)
             outBytes = CardHeader.AfterSplice(outBytes, oldHdrAt, outBytes.Length - b.Length);   // keep KKEx size / data length true
             File.WriteAllBytes(dst, outBytes);
             res.TPack += swPack.Elapsed.TotalMilliseconds;
